@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+        .banner {
+            width: 100%;
+            font-size: 32px;
+            padding: 15px;
+            text-align: center;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+        .timer {
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+        }
+        button {
+            margin: 0 10px;
+            background-color: lightgrey;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            width: 140px;
+        }
+        button:hover {
+            background-color: #d3d3d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">Landing Page</div>
+
+    <div class="content">
+        <div class="timer">Timer</div>
+        <div class="button-container">
+            <button onclick="window.location.href='calendar.html'">Calendar</button>
+            <button onclick="window.location.href='degree-planner.html'">Degree Planner</button>
+            <button onclick="window.location.href='catalog.html'">Course Catalog</button>
+        </div>
+    </div>
+</body>
+</html>

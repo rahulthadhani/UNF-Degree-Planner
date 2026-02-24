@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; background: white; }
+
+        /* Banner */
+        .banner { width: 100%; display: flex; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ccc; position: relative; flex-shrink: 0; }
+        .banner h1 { font-size: 24px; position: absolute; left: 50%; transform: translateX(-50%); }
+        .banner-buttons { display: flex; gap: 10px; margin-left: auto; }
+        .banner-buttons button { background-color: lightgrey; border: none; padding: 8px 16px; cursor: pointer; font-size: 13px; font-family: sans-serif; }
+        .banner-buttons button:hover { background-color: #bbb; }
+
+        /* Panes */
+        .panes { display: flex; flex: 1; overflow: hidden; }
+        .left-pane { width: 15%; border-right: 1px solid #ccc; display: flex; flex-direction: column; padding: 0; overflow-y: auto; flex-shrink: 0; }
+        .left-pane-header { font-size: 13px; font-weight: bold; padding: 10px 12px; border-bottom: 1px solid #ccc; background: #e8e8e8; text-align: center; flex-shrink: 0; }
+        .online-course-item { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 11px; cursor: pointer; background: #c8dff0; }
+        .online-course-item:hover { background: #b0d0e8; }
+        .online-empty { padding: 12px; font-size: 11px; color: #999; text-align: center; }
+        .right-pane { width: 85%; display: flex; flex-direction: column; padding: 20px; overflow: hidden; }
+
+        /* Nav */
+        .cal-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 12px; flex-shrink: 0; }
+        .cal-nav button { background: lightgrey; border: none; padding: 6px 14px; cursor: pointer; font-size: 16px; font-family: sans-serif; }
+        .cal-nav button:hover { background: #bbb; }
+        .cal-nav span { font-size: 16px; font-weight: bold; min-width: 200px; text-align: center; }
+
+        /* Grid wrapper — scrollable */
+        .cal-scroll { flex: 1; overflow-y: auto; border: 1px solid #ccc; }
+
+        /*
+          Grid layout:
+          - Columns: 70px (time) + 7 equal day columns
+          - Rows: 1 header row + (16 hours × 4 quarters) = 64 data rows
+          Each quarter row = 12px tall (hour = 48px total, matching original)
+        */
+        .cal-grid {
+            display: grid;
+            grid-template-columns: 70px repeat(7, 1fr);
+            grid-template-rows: 28px repeat(64, 12px);
+            min-width: 0;
+        }
+
+        /* Header row cells */
+        .cal-corner {
+            grid-column: 1; grid-row: 1;
+            background: #e8e8e8;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+        }
+        .cal-day-header {
+            grid-row: 1;
+            text-align: center; font-size: 12px; font-weight: bold;
+            padding: 6px 2px;
+            background: #e8e8e8;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .cal-day-header.greyed { background: #b0b0b0 !important; color: #666; }
+
+        /* Time label: spans 4 quarter-rows per hour */
+        .cal-time {
+            grid-column: 1;
+            font-size: 10px; text-align: right;
+            padding: 2px 6px 0 0;
+            color: #666;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            background: #fafafa;
+            cursor: pointer;
+            display: flex; align-items: flex-start; justify-content: flex-end;
+        }
+        .cal-time.greyed { background: #b0b0b0 !important; color: #666; }
+
+        .cal-qcell {
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid transparent;
+            background: white;
+            cursor: pointer;
+            min-width: 0;
+        }
+        .cal-qcell:hover { background: #f5f5f5; }
+        .cal-qcell.greyed { background: #d0d0d0 !important; cursor: not-allowed; pointer-events: none; }
+
+        /* Booked course block — spans multiple quarter rows via JS grid-row */
+        .cal-booked {
+            background: #c8dff0;
+            border: 1px solid #a0c4e0;
+            border-right: 1px solid #a0c4e0;
+            font-size: 9px; font-weight: bold; color: #1a2a4a;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 2px;
+            cursor: pointer;
+            overflow: hidden;
+            z-index: 3;
+        }
+        .cal-booked:hover { background: #b0d0e8; }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <h1>Calendar</h1>
+    <div class="banner-buttons">
+        <button onclick="window.location.href='landing-page.html'">Landing Page</button>
+        <button onclick="window.location.href='calendar.html'">Calendar</button>
+        <button onclick="window.location.href='degree-planner.html'">Degree Planner</button>
+        <button onclick="window.location.href='catalog.html'">Course Catalog</button>
+    </div>
+</div>
+
+<div class="panes">
+    <div class="left-pane">
+        <div class="left-pane-header">Online</div>
+        <div id="online-list"></div>
+    </div>
+    <div class="right-pane">
+        <div class="cal-nav">
+            <button id="prev-btn">&#8592;</button>
+            <span id="week-label"></span>
+            <button id="next-btn">&#8594;</button>
+        </div>
+        <div class="cal-scroll">
+            <div class="cal-grid" id="cal-grid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    // Hours displayed: 6 AM – 9 PM (16 hours, indices 0–15)
+    // Each hour = 4 quarter rows. Grid data rows 2–65 (1-indexed, row 1 = header)
+    // Quarter index = hourIdx * 4 + quarterOffset (0–3)
+    // Grid row for quarter q = q + 2  (because row 1 is header)
+
+    const START_HOUR = 6; // 6 AM
+    const NUM_HOURS  = 16; // 6 AM to 9 PM inclusive
+    const NUM_Q      = NUM_HOURS * 4; // 64 quarters total
+
+    function hourLabel(h) {
+        if (h < 12)  return `${h}:00 AM`;
+        if (h === 12) return `12:00 PM`;
+        return `${h - 12}:00 PM`;
+    }
+
+    // Convert "HH:MM AM/PM" time string to quarter index (from START_HOUR)
+    function timeToQ(timeStr) {
+        // e.g. "9:30 AM" -> quarterIndex
+        const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!match) return null;
+        let h = parseInt(match[1]);
+        const m = parseInt(match[2]);
+        const period = match[3].toUpperCase();
+        if (period === 'PM' && h !== 12) h += 12;
+        if (period === 'AM' && h === 12) h = 0;
+        return (h - START_HOUR) * 4 + Math.round(m / 15);
+    }
+
+    const SEMESTERS = [];
+    for (let y = 2024; y <= 2030; y++) {
+        SEMESTERS.push({ name: 'Spring', year: y });
+        SEMESTERS.push({ name: 'Summer', year: y });
+        SEMESTERS.push({ name: 'Fall',   year: y });
+    }
+
+    function getCurrentSemesterIndex() {
+        const now = new Date(), month = now.getMonth(), year = now.getFullYear();
+        const season = month <= 4 ? 'Spring' : month <= 7 ? 'Summer' : 'Fall';
+        const idx = SEMESTERS.findIndex(s => s.name === season && s.year === year);
+        return idx >= 0 ? idx : 0;
+    }
+
+    let semIdx = parseInt(localStorage.getItem('cal_semIdx') ?? getCurrentSemesterIndex());
+    function key(name) { return `cal_${semIdx}_${name}`; }
+
+    // Migration: clear any courses saved in old {day, row} format so they get re-added with new {day, startQ, endQ} format
+    function migrateData() {
+        for (let i = 0; i < SEMESTERS.length; i++) {
+            const k = `cal_${i}_courses`;
+            const courses = JSON.parse(localStorage.getItem(k) || '[]');
+            let changed = false;
+            const migrated = courses.filter(c => {
+                if (c.blocks && c.blocks.length > 0 && c.blocks[0].row !== undefined) {
+                    changed = true;
+                    return false; // remove old format
+                }
+                return true;
+            });
+            if (changed) localStorage.setItem(k, JSON.stringify(migrated));
+        }
+    }
+    migrateData();
+
+    let greyedCols = new Set();
+    let greyedRows = new Set(); // hour indices (0-15)
+
+    function loadSemState() {
+        greyedCols = new Set(JSON.parse(localStorage.getItem(key('greyedCols')) || '[]'));
+        greyedRows = new Set(JSON.parse(localStorage.getItem(key('greyedRows')) || '[]'));
+    }
+    loadSemState();
+
+    function saveState() {
+        localStorage.setItem('cal_semIdx', semIdx);
+        localStorage.setItem(key('greyedCols'), JSON.stringify([...greyedCols]));
+        localStorage.setItem(key('greyedRows'), JSON.stringify([...greyedRows]));
+    }
+
+    // Returns map of "day-quarterIdx" -> {code, href} for all booked non-online courses
+    // Each course block now stores {day, startQ, endQ} in 15-min quarter indices
+    function getBookedBlocks() {
+        const courses = JSON.parse(localStorage.getItem(key('courses')) || '[]');
+        // Returns list of {code, href, day, startQ, endQ}
+        const result = [];
+        for (const course of courses) {
+            if (!course.blocks || course.blocks.length === 0) continue;
+            // Group consecutive quarters per day into spans
+            // blocks are [{day, startQ, endQ}] already if using new format,
+            // or [{day, row}] if old format — handle both
+            if (course.blocks[0].startQ !== undefined) {
+                // New format
+                for (const b of course.blocks) {
+                    result.push({ code: course.code, href: course.href || 'cop3503.html', day: b.day, startQ: b.startQ, endQ: b.endQ });
+                }
+            } else {
+                // Legacy format: row = hour index, convert to quarters
+                // Group by day
+                const byDay = {};
+                for (const b of course.blocks) {
+                    if (!byDay[b.day]) byDay[b.day] = [];
+                    byDay[b.day].push(b.row);
+                }
+                for (const [day, rows] of Object.entries(byDay)) {
+                    const sorted = [...new Set(rows)].sort((a,b) => a-b);
+                    // Merge consecutive rows into spans
+                    let start = sorted[0], prev = sorted[0];
+                    for (let i = 1; i <= sorted.length; i++) {
+                        if (i === sorted.length || sorted[i] !== prev + 1) {
+                            result.push({ code: course.code, href: 'cop3503.html', day: parseInt(day), startQ: start * 4, endQ: prev * 4 + 3 });
+                            if (i < sorted.length) { start = sorted[i]; prev = sorted[i]; }
+                        } else { prev = sorted[i]; }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    function renderOnlineList() {
+        const list = document.getElementById('online-list');
+        const courses = JSON.parse(localStorage.getItem(key('courses')) || '[]');
+        const online = courses.filter(c => !c.blocks || c.blocks.length === 0);
+        list.innerHTML = '';
+        if (online.length === 0) {
+            list.innerHTML = '<div class="online-empty">No online classes</div>';
+        } else {
+            online.forEach(course => {
+                const item = document.createElement('div');
+                item.className = 'online-course-item';
+                item.textContent = course.code;
+                item.title = course.label || '';
+                item.onclick = () => window.location.href = course.href || 'cop3503.html';
+                list.appendChild(item);
+            });
+        }
+    }
+
+    function renderCalendar() {
+        const grid  = document.getElementById('cal-grid');
+        const label = document.getElementById('week-label');
+        label.textContent = `${SEMESTERS[semIdx].name} ${SEMESTERS[semIdx].year}`;
+        grid.innerHTML = '';
+
+        const bookedBlocks = getBookedBlocks();
+
+        // --- Corner ---
+        const corner = document.createElement('div');
+        corner.className = 'cal-corner';
+        grid.appendChild(corner);
+
+        // --- Day headers (grid row 1) ---
+        DAYS.forEach((day, colIdx) => {
+            const hdr = document.createElement('div');
+            hdr.className = 'cal-day-header' + (greyedCols.has(colIdx) ? ' greyed' : '');
+            hdr.style.gridColumn = colIdx + 2;
+            hdr.style.gridRow = '1';
+            hdr.textContent = day;
+            hdr.onclick = () => {
+                if (greyedCols.has(colIdx)) greyedCols.delete(colIdx);
+                else greyedCols.add(colIdx);
+                saveState(); renderCalendar();
+            };
+            grid.appendChild(hdr);
+        });
+
+        // --- Time labels + quarter cells ---
+        for (let hIdx = 0; hIdx < NUM_HOURS; hIdx++) {
+            const h = START_HOUR + hIdx;
+            const qStart = hIdx * 4;       // first quarter of this hour
+            const gridRowStart = qStart + 2; // +2 because row 1 = header
+
+            // Time label spanning 4 quarter rows
+            const timeCell = document.createElement('div');
+            timeCell.className = 'cal-time' + (greyedRows.has(hIdx) ? ' greyed' : '');
+            timeCell.style.gridColumn = '1';
+            timeCell.style.gridRow = `${gridRowStart} / span 4`;
+            timeCell.textContent = hourLabel(h);
+            timeCell.onclick = () => {
+                if (greyedRows.has(hIdx)) greyedRows.delete(hIdx);
+                else greyedRows.add(hIdx);
+                saveState(); renderCalendar();
+            };
+            grid.appendChild(timeCell);
+
+            // Quarter cells for each day (visual only, no interaction)
+            for (let q = 0; q < 4; q++) {
+                const gridRow = gridRowStart + q;
+                const isHourBottom = (q === 3);
+                for (let d = 0; d < 7; d++) {
+                    const isGreyed = greyedCols.has(d) || greyedRows.has(hIdx);
+                    const cell = document.createElement('div');
+                    cell.className = 'cal-qcell' + (isGreyed ? ' greyed' : '');
+                    cell.style.gridColumn = d + 2;
+                    cell.style.gridRow    = gridRow;
+                    if (isHourBottom) cell.style.borderBottom = '1px solid #ccc';
+                    if (!isGreyed) cell.onclick = () => window.location.href = 'degree-planner.html';
+                    grid.appendChild(cell);
+                }
+            }
+
+            // Clickable hour overlays — one per day, spanning all 4 quarter rows
+            for (let d = 0; d < 7; d++) {
+                const isGreyed = greyedCols.has(d) || greyedRows.has(hIdx);
+                if (isGreyed) continue; // greyed hours don't redirect
+                const overlay = document.createElement('div');
+                overlay.style.gridColumn = d + 2;
+                overlay.style.gridRow    = `${gridRowStart} / span 4`;
+                overlay.style.cursor     = 'pointer';
+                overlay.style.zIndex     = '1';
+                overlay.onclick = () => window.location.href = 'degree-planner.html';
+                grid.appendChild(overlay);
+            }
+        }
+
+        // --- Booked course blocks (rendered on top via z-index) ---
+        bookedBlocks.forEach(block => {
+            const { code, href, day, startQ, endQ } = block;
+            const colIdx    = day;
+            const hourOfStart = Math.floor(startQ / 4);
+            const isGreyed  = greyedCols.has(colIdx) || greyedRows.has(hourOfStart);
+            if (isGreyed) return; // don't show blocked courses
+
+            const gridCol     = day + 2;
+            const gridRowStart = startQ + 2;
+            const span         = endQ - startQ + 1;
+
+            const el = document.createElement('div');
+            el.className = 'cal-booked';
+            el.style.gridColumn = gridCol;
+            el.style.gridRow    = `${gridRowStart} / span ${span}`;
+            el.textContent      = code;
+            el.onclick          = () => window.location.href = href;
+            grid.appendChild(el);
+        });
+
+        document.getElementById('prev-btn').disabled = semIdx === 0;
+        document.getElementById('next-btn').disabled = semIdx === SEMESTERS.length - 1;
+        renderOnlineList();
+    }
+
+    document.getElementById('prev-btn').onclick = () => {
+        if (semIdx > 0) { semIdx--; loadSemState(); saveState(); renderCalendar(); }
+    };
+    document.getElementById('next-btn').onclick = () => {
+        if (semIdx < SEMESTERS.length - 1) { semIdx++; loadSemState(); saveState(); renderCalendar(); }
+    };
+
+    renderCalendar();
+</script>
+</body>
+</html>

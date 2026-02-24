@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Degree Planner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: white;
+        }
+        .banner {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .banner h1 {
+            font-size: 28px;
+            margin: 0;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .banner-buttons {
+            display: flex;
+            gap: 10px;
+            z-index: 1;
+            margin-left: auto;
+        }
+        .banner-buttons button {
+            background-color: lightgrey;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: sans-serif;
+        }
+        .arrow-btn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: lightgrey;
+            border: none;
+            font-size: 24px;
+            padding: 16px 12px;
+            cursor: pointer;
+            z-index: 100;
+        }
+        .arrow-btn:hover { background-color: #bbb; }
+        .arrow-left  { left: 10px; }
+        .arrow-right { right: 10px; }
+        .banner-buttons button:hover { background-color: #bbb; }
+
+        .node {
+            position: absolute;
+            width: 115px;
+            height: 65px;
+            transform: translate(-50%, -50%);
+        }
+        .btn {
+            width: 115px;
+            height: 65px;
+            background-color: lightgrey;
+            border: 3px solid grey;
+            font-size: 10px;
+            font-family: sans-serif;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
+            padding: 4px;
+        }
+        .btn strong { font-size: 11px; display: block; }
+        .btn.completed { border-color: green; outline: 2px solid green; }
+        .btn.available { border-color: goldenrod; outline: 2px solid goldenrod; }
+        .btn.in-progress {
+            border: 3px dashed goldenrod;
+            outline: 2px dashed green;
+            outline-offset: 2px;
+        }
+        .btn.locked    { border-color: red; outline: 2px solid red; cursor: not-allowed; pointer-events: none; }
+        .btn.standalone { border-color: grey; cursor: default; }
+        .btn.locked::after {
+            content: ' 🔒';
+            font-size: 10px;
+            display: block;
+            margin-top: 2px;
+        }
+        .btn:not(.locked):not(.standalone):hover { background-color: #bbb; }
+
+        #tree-container { position: relative; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <div class="banner-buttons">
+        <button onclick="window.location.href='landing-page.html'">Landing Page</button>
+        <button onclick="window.location.href='calendar.html'">Calendar</button>
+        <button onclick="window.location.href='degree-planner.html'">Degree Planner</button>
+        <button onclick="window.location.href='catalog.html'">Course Catalog</button>
+    </div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;">
+        <div style="font-size:18px;font-weight:bold;font-family:sans-serif;">Degree Planner</div>
+        <div style="font-size:11px;color:#666;font-family:sans-serif;margin-top:2px;">BS in Computer Science Common Core &amp; Major Requirements &mdash; <span id="sem-label"></span></div>
+    </div>
+</div>
+
+<button class="arrow-btn arrow-left" onclick="window.location.href='unavailable.html'">&#8592;</button>
+<button class="arrow-btn arrow-right" onclick="window.location.href='unavailable.html'">&#8594;</button>
+
+<div id="tree-container">
+    <svg id="svg-lines" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible;"></svg>
+
+    <!-- ===== ROW 0: standalone no-prereq courses ===== -->
+    <div class="node" id="n-mac1147">
+        <button class="btn available" onclick="window.location.href='unavailable.html'">
+            <strong>MAC 1147</strong><span>Pre-Calculus</span>
+        </button>
+    </div>
+    <div class="node" id="n-spc">
+        <button class="btn available" onclick="window.location.href='catalog.html?filter=speech'">
+            <strong>SPC</strong><span>Speech / Public Speaking</span>
+        </button>
+    </div>
+    <div class="node" id="n-sci1">
+        <button class="btn available" onclick="window.location.href='catalog.html?filter=science'">
+            <strong>Science</strong><span>for Science Major</span>
+        </button>
+    </div>
+    <div class="node" id="n-sci2">
+        <button class="btn available" onclick="window.location.href='catalog.html?filter=science'">
+            <strong>Science</strong><span>for Science Major</span>
+        </button>
+    </div>
+    <div class="node" id="n-cop2220">
+        <button class="btn completed" onclick="window.location.href='unavailable.html'">
+            <strong>COP 2220</strong><span>Programming I</span>
+        </button>
+    </div>
+
+    <!-- ===== ROW 1: prereq to CS row 2, or standalone electives ===== -->
+    <div class="node" id="n-mac2311">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>MAC 2311</strong><span>Calculus I</span>
+        </button>
+    </div>
+    <div class="node" id="n-cot3100">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COT 3100</strong><span>Comp Structures</span>
+        </button>
+    </div>
+    <div class="node" id="n-cis3253">
+        <button class="btn available" onclick="window.location.href='unavailable.html'">
+            <strong>CIS 3253</strong><span>Legal &amp; Ethical Issues</span>
+        </button>
+    </div>
+    <div class="node" id="n-cop3503">
+        <button class="btn available" onclick="window.location.href='cop3503.html'">
+            <strong>COP 3503</strong><span>Programming II</span>
+        </button>
+    </div>
+    <div class="node" id="n-cda3100">
+        <button class="btn available" onclick="window.location.href='unavailable.html'">
+            <strong>CDA 3100</strong><span>Comp Org &amp; Arch</span>
+        </button>
+    </div>
+    <div class="node" id="n-elective1">
+        <button class="btn available" onclick="window.location.href='catalog.html?filter=elective'">
+            <strong>Elective</strong><span>Any 3XXX/4XXX CAP/CDA/CEN/ CIS/CNT/COP/COT</span>
+        </button>
+    </div>
+    <div class="node" id="n-elective2">
+        <button class="btn available" onclick="window.location.href='catalog.html?filter=elective'">
+            <strong>Elective</strong><span>Any 3XXX/4XXX CAP/CDA/CEN/ CIS/CNT/COP/COT</span>
+        </button>
+    </div>
+    <div class="node" id="n-elective3">
+        <button class="btn available" onclick="window.location.href='catalog.html?filter=elective'">
+            <strong>Elective</strong><span>Any 3XXX/4XXX CAP/CDA/CEN/ CIS/CNT/COP/COT</span>
+        </button>
+    </div>
+
+    <!-- ===== ROW 2 ===== -->
+    <div class="node" id="n-mac2312">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>MAC 2312</strong><span>Calculus II</span>
+        </button>
+    </div>
+    <div class="node" id="n-cot3210">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COT 3210</strong><span>Theory of Computation</span>
+        </button>
+    </div>
+    <div class="node" id="n-cop3530">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COP 3530</strong><span>Data Structures</span>
+        </button>
+    </div>
+    <div class="node" id="n-cnt4504">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>CNT 4504</strong><span>Computer Networks</span>
+        </button>
+    </div>
+    <div class="node" id="n-cop3703">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COP 3703</strong><span>Intro to Databases</span>
+        </button>
+    </div>
+    <div class="node" id="n-cop3404">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COP 3404</strong><span>Systems Programming</span>
+        </button>
+    </div>
+
+    <!-- ===== ROW 3 ===== -->
+    <div class="node" id="n-phy2048">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>PHY 2048C</strong><span>Univ Physics I w/ Lab</span>
+        </button>
+    </div>
+    <div class="node" id="n-mas3105">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>MAS 3105</strong><span>Linear Algebra</span>
+        </button>
+    </div>
+    <div class="node" id="n-sta3032">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>STA 3032</strong><span>Prob &amp; Stats for Engin</span>
+        </button>
+    </div>
+    <div class="node" id="n-cop4620">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COP 4620</strong><span>Lang Translators</span>
+        </button>
+    </div>
+    <div class="node" id="n-cen4010">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>CEN 4010</strong><span>Software Engineering</span>
+        </button>
+    </div>
+    <div class="node" id="n-cot4400">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COT 4400</strong><span>Design &amp; Analysis of Algorithms</span>
+        </button>
+    </div>
+    <div class="node" id="n-cap4630">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>CAP 4630</strong><span>Artificial Intelligence</span>
+        </button>
+    </div>
+    <div class="node" id="n-cop4610">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>COP 4610</strong><span>Operating Systems</span>
+        </button>
+    </div>
+
+    <!-- ===== ROW 4 ===== -->
+    <div class="node" id="n-phy2049">
+        <button class="btn locked" onclick="window.location.href='unavailable.html'">
+            <strong>PHY 2049/L</strong><span>Univ Physics II w/ Lab</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    // Populate semester label in banner
+    (function() {
+        const SEMESTERS = [];
+        for (let y = 2024; y <= 2030; y++) {
+            SEMESTERS.push({ name: 'Spring', year: y });
+            SEMESTERS.push({ name: 'Summer', year: y });
+            SEMESTERS.push({ name: 'Fall',   year: y });
+        }
+        const idx = parseInt(localStorage.getItem('cal_semIdx') || '0');
+        const sem = SEMESTERS[idx] || SEMESTERS[0];
+        document.getElementById('sem-label').textContent = `${sem.name} ${sem.year}`;
+    })();
+    const COL = 140;
+    const ROW = 155;
+    const NW  = 115;
+    const NH  = 65;
+
+    /*
+      GRID (col, row):
+      Row 0 (no prereqs): mac1147@0, spc@6, sci1@7, sci2@8, cop2220@4
+      Row 1:  mac2311@0, cot3100@2, cis3253@3, cop3503@4, cda3100@5, elective1@7, elective2@8, elective3@9
+      Row 2:  mac2312@0, cot3210@2, cop3530@3, cnt4504@4, cop3703@5, cop3404@6
+      Row 3:  phy2048@0, mas3105@1, sta3032@2, cop4620@3, cen4010@4, cot4400@5, cap4630@6, cop4610@7 (wait, mas/sta prereq mac2312)
+      Row 4:  phy2049@0
+
+      Actually per PDF:
+        mac1147 → mac2311 → mac2312 → phy2048c → phy2049
+        mac2311 → phy2048c (also)
+        mac2312 → mas3105, sta3032
+        mac1147 → cot3100 (available since we assume mac done)
+        cop2220 → cis3253, cop3503, cda3100
+        cot3100 → cot3210, cop3530
+        cop3503 → cop3530, cnt4504, cop3703, cop3404
+        cda3100 → cop3404
+        cot3210 → cop4620
+        cop3530 → cop4620, cen4010, cot4400, cap4630, cop4610
+        cop3703 → cen4010
+        cop3404 → cop4610
+
+      Layout — 10 columns (0–9):
+        col0=math/phys chain
+        col1=mas3105, sta3032
+        col2=cot3100
+        col3=cis3253 / cot3210 / cop4620
+        col4=cop2220 / cop3503 / cnt4504 / cen4010
+        col5=cda3100 / cop3703 / cot4400
+        col6=cop3404 / cap4630
+        col7=cop4610 / elective1
+        col8=elective2 / sci1
+        col9=elective3 / sci2
+        spc=col10
+    */
+
+    const positions = {
+        // Row 0 — no prereqs
+        'n-mac1147':  [0, 0],
+        'n-cop2220':  [4, 0],
+        'n-spc':      [6, 0],
+        'n-sci1':     [7, 0],
+        'n-sci2':     [8, 0],
+        'n-elective1':[9, 0],
+        'n-elective2':[10, 0],
+        'n-elective3':[11, 0],
+        // Row 1
+        'n-mac2311':  [0, 1],
+        'n-cot3100':  [2, 1],
+        'n-cis3253':  [3, 1],
+        'n-cop3503':  [4, 1],
+        'n-cda3100':  [5, 1],
+        // Row 2
+        'n-mac2312':  [0, 2],
+        'n-cot3210':  [2, 2],
+        'n-cop3530':  [3, 2],
+        'n-cnt4504':  [4, 2],
+        'n-cop3703':  [5, 2],
+        'n-cop3404':  [6, 2],
+        // Row 3
+        'n-phy2048':  [0, 3],
+        'n-mas3105':  [1, 3],
+        'n-sta3032':  [2, 3],
+        'n-cop4620':  [3, 3],
+        'n-cen4010':  [4, 3],
+        'n-cot4400':  [5, 3],
+        'n-cap4630':  [6, 3],
+        'n-cop4610':  [7, 3],
+        // Row 4
+        'n-phy2049':  [0, 4],
+    };
+
+    const edges = [
+        // Math/science chain (grey - locked)
+        ['n-mac1147',  'n-mac2311',  'grey'],
+        ['n-mac2311',  'n-mac2312',  'grey'],
+        ['n-mac2311',  'n-phy2048',  'grey'],
+        ['n-mac2312',  'n-phy2048',  'grey'],
+        ['n-mac2312',  'n-mas3105',  'grey'],
+        ['n-mac2312',  'n-sta3032',  'grey'],
+        ['n-phy2048',  'n-phy2049',  'grey'],
+        // MAC → COT3100 (available — mac assumed done)
+        ['n-mac1147',  'n-cot3100',  'grey'],
+        // COP2220 completed (green)
+        ['n-cop2220',  'n-cis3253',  'green'],
+        ['n-cop2220',  'n-cop3503',  'green'],
+        ['n-cop2220',  'n-cda3100',  'green'],
+        // CS locked edges
+        ['n-cot3100',  'n-cot3210',  'grey'],
+        ['n-cot3100',  'n-cop3530',  'grey'],
+        ['n-cop3503',  'n-cop3530',  'grey'],
+        ['n-cop3503',  'n-cnt4504',  'grey'],
+        ['n-cop3503',  'n-cop3703',  'grey'],
+        ['n-cop3503',  'n-cop3404',  'grey'],
+        ['n-cda3100',  'n-cop3404',  'grey'],
+        ['n-cot3210',  'n-cop4620',  'grey'],
+        ['n-cop3530',  'n-cop4620',  'grey'],
+        ['n-cop3530',  'n-cen4010',  'grey'],
+        ['n-cop3530',  'n-cot4400',  'grey'],
+        ['n-cop3530',  'n-cap4630',  'grey'],
+        ['n-cop3530',  'n-cop4610',  'grey'],
+        ['n-cop3703',  'n-cen4010',  'grey'],
+        ['n-cop3404',  'n-cop4610',  'grey'],
+    ];
+
+    const COLS = 12;
+    const ROWS = 5;
+    const totalW = (COLS - 1) * COL + NW;
+    const totalH = (ROWS - 1) * ROW + NH;
+
+    const TOP_OFFSET = 30;
+
+    for (const [id, [col, row]] of Object.entries(positions)) {
+        const el = document.getElementById(id);
+        el.style.left = (col * COL + NW / 2) + 'px';
+        el.style.top  = (row * ROW + NH / 2 + TOP_OFFSET) + 'px';
+    }
+
+    const container = document.getElementById('tree-container');
+    container.style.width  = totalW + 'px';
+    container.style.height = (totalH + TOP_OFFSET) + 'px';
+
+    const svg = document.getElementById('svg-lines');
+    svg.setAttribute('width',  totalW);
+    svg.setAttribute('height', totalH + TOP_OFFSET);
+
+    function cx(id) { const [col] = positions[id]; return col * COL + NW / 2; }
+    function cy(id) { const [, row] = positions[id]; return row * ROW + NH / 2 + TOP_OFFSET; }
+
+    let html = '';
+    for (const [from, to, color] of edges) {
+        const x1 = cx(from), y1 = cy(from);
+        const x2 = cx(to),   y2 = cy(to);
+        const cp1y = y1 + (y2 - y1) * 0.5;
+        const cp2y = y1 + (y2 - y1) * 0.5;
+        html += `<path d="M${x1},${y1} C${x1},${cp1y} ${x2},${cp2y} ${x2},${y2}"
+            fill="none" stroke="${color}" stroke-width="2" opacity="0.8"/>`;
+    }
+    svg.innerHTML = html;
+
+    const semIdx = parseInt(localStorage.getItem('cal_semIdx') || '0');
+
+    // Map node ID -> course code
+    const nodeToCode = {
+        'n-mac1147':  'MAC 1147',
+        'n-mac2311':  'MAC 2311',
+        'n-mac2312':  'MAC 2312',
+        'n-mas3105':  'MAS 3105',
+        'n-sta3032':  'STA 3032',
+        'n-phy2048':  'PHY 2048C',
+        'n-phy2049':  'PHY 2049',
+        'n-spc':      'SPC',
+        'n-sci1':     'SCI 1',
+        'n-sci2':     'SCI 2',
+        'n-elective1':'ELECTIVE 1',
+        'n-elective2':'ELECTIVE 2',
+        'n-elective3':'ELECTIVE 3',
+        'n-cop2220':  'COP 2220',
+        'n-cot3100':  'COT 3100',
+        'n-cis3253':  'CIS 3253',
+        'n-cop3503':  'COP 3503',
+        'n-cda3100':  'CDA 3100',
+        'n-cot3210':  'COT 3210',
+        'n-cop3530':  'COP 3530',
+        'n-cnt4504':  'CNT 4504',
+        'n-cop3703':  'COP 3703',
+        'n-cop3404':  'COP 3404',
+        'n-cop4620':  'COP 4620',
+        'n-cen4010':  'CEN 4010',
+        'n-cot4400':  'COT 4400',
+        'n-cap4630':  'CAP 4630',
+        'n-cop4610':  'COP 4610',
+    };
+
+    // Prereqs: course code -> list of course codes that must ALL be completed first
+    const prereqMap = {
+        'MAC 2311':  ['MAC 1147'],
+        'MAC 2312':  ['MAC 2311'],
+        'MAS 3105':  ['MAC 2312'],
+        'STA 3032':  ['MAC 2312'],
+        'PHY 2048C': ['MAC 2311'],
+        'PHY 2049':  ['PHY 2048C', 'MAC 2312'],
+        'COT 3100':  ['MAC 1147'],
+        'CIS 3253':  ['COP 2220'],
+        'COP 3503':  ['COP 2220'],
+        'CDA 3100':  ['COP 2220'],
+        'COT 3210':  ['COT 3100'],
+        'COP 3530':  ['COT 3100', 'COP 3503'],
+        'CNT 4504':  ['COP 3503'],
+        'COP 3703':  ['COP 3503'],
+        'COP 3404':  ['CDA 3100', 'COP 3503'],
+        'COP 4620':  ['COT 3210', 'COP 3530'],
+        'CEN 4010':  ['COP 3530', 'COP 3703'],
+        'COT 4400':  ['COP 3530'],
+        'CAP 4630':  ['COP 3530'],
+        'COP 4610':  ['COP 3530', 'COP 3404'],
+    };
+
+    // Courses already marked completed in HTML (hardcoded as done before this system)
+    const hardCompleted = new Set(['COP 2220']);
+
+    // Build set of completed courses from past semesters + hardcoded
+    const completedCodes = new Set(hardCompleted);
+    for (let i = 0; i < semIdx; i++) {
+        const courses = JSON.parse(localStorage.getItem(`cal_${i}_courses`) || '[]');
+        courses.forEach(c => completedCodes.add(c.code));
+    }
+
+    // Build set of in-progress courses (current semester)
+    const currentCourses = JSON.parse(localStorage.getItem(`cal_${semIdx}_courses`) || '[]');
+    const inProgressCodes = new Set(currentCourses.map(c => c.code));
+
+    // Determine status for each node
+    for (const [nodeId, code] of Object.entries(nodeToCode)) {
+        const el  = document.getElementById(nodeId);
+        if (!el) continue;
+        const btn = el.querySelector('.btn');
+        if (!btn) continue;
+
+        // Skip hardcoded completed — already set in HTML
+        if (hardCompleted.has(code)) continue;
+
+        // Skip standalone courses (no prereqs, no lock system needed)
+        const standalones = ['SPC', 'SCI 1', 'SCI 2', 'ELECTIVE 1', 'ELECTIVE 2', 'ELECTIVE 3'];
+        if (standalones.includes(code)) continue;
+
+        const prereqs   = prereqMap[code] || [];
+        const allMet    = prereqs.every(p => completedCodes.has(p));
+        const completed = completedCodes.has(code);
+        const inProgress = inProgressCodes.has(code);
+
+        btn.classList.remove('available', 'locked', 'completed', 'in-progress');
+
+        if (completed) {
+            btn.classList.add('completed');
+            btn.style.pointerEvents = 'none';
+        } else if (inProgress) {
+            btn.classList.add('in-progress');
+        } else if (allMet) {
+            btn.classList.add('available');
+            btn.style.pointerEvents = ''; // re-enable if it was locked before
+        } else {
+            btn.classList.add('locked');
+            btn.style.pointerEvents = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programming II</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; background: white; display: flex; flex-direction: column; min-height: 100vh; }
+        .banner { width: 100%; display: flex; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ccc; position: relative; }
+        .banner h1 { font-size: 24px; position: absolute; left: 50%; transform: translateX(-50%); }
+        .banner-buttons { display: flex; gap: 10px; margin-left: auto; }
+        .banner-buttons button { background-color: lightgrey; border: none; padding: 8px 16px; cursor: pointer; font-size: 13px; font-family: sans-serif; }
+        .banner-buttons button:hover { background-color: #bbb; }
+        .content { display: flex; gap: 40px; padding: 40px; align-items: flex-start; }
+        .course-info { flex: 1; max-width: 380px; }
+        .course-info h2 { font-size: 24px; margin-bottom: 16px; }
+        .course-info p { font-size: 13px; color: #333; line-height: 1.7; }
+
+        /* Prereq flowchart */
+        .prereq-section { margin-top: 28px; }
+        .prereq-section h3 { font-size: 13px; font-weight: bold; color: #555; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .sections-panel { flex: 2; display: flex; flex-direction: column; gap: 10px; }
+        .add-course-btn { align-self: flex-end; background-color: lightgrey; border: none; padding: 10px 24px; font-size: 14px; cursor: pointer; font-family: sans-serif; margin-bottom: 6px; }
+        .add-course-btn:hover { background-color: #bbb; }
+        .section-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid #ccc; background: white; cursor: pointer; width: 100%; font-family: sans-serif; text-align: left; }
+        .section-card:hover { background-color: #f5f5f5; }
+        .section-card.selected { background-color: #f0f0f0; border-color: #999; }
+        .section-card.dimmed { background-color: #e0e0e0; opacity: 0.5; pointer-events: none; }
+        .section-card.conflicted { background-color: #d0d0d0; opacity: 0.5; pointer-events: none; border-color: #999; }
+        .section-details { font-size: 12px; line-height: 1.8; color: #222; text-align: left; }
+        .section-details .course-code { font-weight: bold; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="banner">
+    <h1>Programming II</h1>
+    <div class="banner-buttons">
+        <button onclick="window.location.href='landing-page.html'">Landing Page</button>
+        <button onclick="window.location.href='calendar.html'">Calendar</button>
+        <button onclick="window.location.href='degree-planner.html'">Degree Planner</button>
+        <button onclick="window.location.href='catalog.html'">Course Catalog</button>
+    </div>
+</div>
+<div class="content">
+    <div class="course-info">
+        <h2>Programming II</h2>
+        <p>This course extends the fundamentals of programming introduced in Programming I. Students explore object-oriented programming concepts including classes, inheritance, polymorphism, and encapsulation. Topics include recursion, algorithm analysis, and an introduction to data structures such as linked lists, stacks, queues, and trees. Emphasis is placed on software design principles and writing efficient, maintainable code through hands-on programming projects.</p>
+
+        <div class="prereq-section">
+            <h3>Prerequisites &amp; Unlocks</h3>
+            <div id="prereq-chart" style="position:relative;"></div>
+        </div>
+    </div>
+    <div class="sections-panel">
+        <button class="add-course-btn" id="action-btn" onclick="handleAction()">Add Course</button>
+
+        <!-- Section data: days as comma-separated day indices (0=Sun), start-time/end-time as "H:MM AM/PM" -->
+        <button class="section-card" onclick="toggleSelect(this)" data-crn="482910" data-days="2,4" data-start-time="9:30 AM" data-end-time="10:45 AM" data-label="COP 3503 (Tu/Th 9:30-10:45)">
+            <div class="section-details">
+                <div class="course-code">COP 3503</div>
+                <div>CRN: 482910</div>
+                <div>Class Time: Tuesday &amp; Thursday, 9:30 AM – 10:45 AM</div>
+                <div>Dates: January 12, 2026 – May 1, 2026</div>
+                <div>Room: Building 51, Room 1201</div>
+                <div>Professor: Prof. Sarah Martinez</div>
+            </div>
+        </button>
+
+        <button class="section-card" onclick="toggleSelect(this)" data-crn="519384" data-days="1,3,5" data-start-time="11:00 AM" data-end-time="11:50 AM" data-label="COP 3503 (M/W/F 11:00-11:50)">
+            <div class="section-details">
+                <div class="course-code">COP 3503</div>
+                <div>CRN: 519384</div>
+                <div>Class Time: Monday, Wednesday &amp; Friday, 11:00 AM – 11:50 AM</div>
+                <div>Dates: January 12, 2026 – May 1, 2026</div>
+                <div>Room: Building 15, Room 1302</div>
+                <div>Professor: Dr. Kevin Patel</div>
+            </div>
+        </button>
+
+        <button class="section-card" onclick="toggleSelect(this)" data-crn="603741" data-days="3" data-start-time="6:00 PM" data-end-time="8:45 PM" data-label="COP 3503 (Wed 6:00-8:45 PM)">
+            <div class="section-details">
+                <div class="course-code">COP 3503</div>
+                <div>CRN: 603741</div>
+                <div>Class Time: Wednesday, 6:00 PM – 8:45 PM</div>
+                <div>Dates: January 12, 2026 – May 1, 2026</div>
+                <div>Room: Building 51, Room 1103</div>
+                <div>Professor: Prof. Emily Johnson</div>
+            </div>
+        </button>
+
+        <button class="section-card" onclick="toggleSelect(this)" data-crn="728405" data-days="" data-start-time="" data-end-time="" data-label="COP 3503 (Online)">
+            <div class="section-details">
+                <div class="course-code">COP 3503</div>
+                <div>CRN: 728405</div>
+                <div>Class Time: Online — Asynchronous</div>
+                <div>Dates: January 12, 2026 – May 1, 2026</div>
+                <div>Room: Online</div>
+                <div>Professor: Dr. James Lee</div>
+            </div>
+        </button>
+    </div>
+</div>
+
+<script>
+    const START_HOUR = 6;
+
+    // Convert time string to quarter index. Always floors to get the quarter that contains this minute.
+    function timeToQ(timeStr) {
+        const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!match) return null;
+        let h = parseInt(match[1]);
+        const m = parseInt(match[2]);
+        const period = match[3].toUpperCase();
+        if (period === 'PM' && h !== 12) h += 12;
+        if (period === 'AM' && h === 12) h = 0;
+        return (h - START_HOUR) * 4 + Math.floor(m / 15);
+    }
+
+    // For end times: last quarter occupied = quarter containing (endTime - 1 min)
+    function timeToQEnd(timeStr) {
+        const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!match) return null;
+        let h = parseInt(match[1]);
+        let m = parseInt(match[2]);
+        const period = match[3].toUpperCase();
+        if (period === 'PM' && h !== 12) h += 12;
+        if (period === 'AM' && h === 12) h = 0;
+        // Subtract 1 minute to get last occupied minute
+        m -= 1;
+        if (m < 0) { m = 59; h -= 1; }
+        return (h - START_HOUR) * 4 + Math.floor(m / 15);
+    }
+
+    const semIdx = parseInt(localStorage.getItem('cal_semIdx') || '0');
+    const key = name => `cal_${semIdx}_${name}`;
+
+    // Check if COP 3503 was already taken in a previous semester
+    function takenInPreviousSemester() {
+        for (let i = 0; i < semIdx; i++) {
+            const courses = JSON.parse(localStorage.getItem(`cal_${i}_courses`) || '[]');
+            if (courses.some(c => c.code === 'COP 3503')) return true;
+        }
+        return false;
+    }
+
+    function isEnrolled() {
+        return JSON.parse(localStorage.getItem(key('courses')) || '[]').some(c => c.code === 'COP 3503');
+    }
+
+    function getEnrolledCRN() {
+        const found = JSON.parse(localStorage.getItem(key('courses')) || '[]').find(c => c.code === 'COP 3503');
+        return found ? found.crn : null;
+    }
+
+    function updateUI() {
+        const btn = document.getElementById('action-btn');
+
+        if (takenInPreviousSemester()) {
+            // Lock the entire page — course already completed
+            btn.textContent = 'Already Completed';
+            btn.style.backgroundColor = '#e0e0e0';
+            btn.style.cursor = 'not-allowed';
+            btn.disabled = true;
+            document.querySelectorAll('.section-card').forEach(card => {
+                card.classList.add('dimmed');
+                card.style.pointerEvents = 'none';
+            });
+            const notice = document.createElement('div');
+            notice.style.cssText = 'font-size:12px;color:#888;margin-bottom:8px;text-align:right;';
+            notice.textContent = 'This course was completed in a previous semester.';
+            btn.parentNode.insertBefore(notice, btn);
+            return;
+        }
+
+        const enrolledCRN = getEnrolledCRN();
+        if (enrolledCRN) {
+            btn.textContent = 'Remove Course';
+            btn.style.backgroundColor = '#e0e0e0';
+            document.querySelectorAll('.section-card').forEach(card => {
+                card.classList.add(card.dataset.crn === enrolledCRN ? 'selected' : 'dimmed');
+            });
+        } else {
+            btn.textContent = 'Add Course';
+            btn.style.backgroundColor = 'lightgrey';
+        }
+    }
+
+    function toggleSelect(card) {
+        if (isEnrolled()) return;
+        const all = document.querySelectorAll('.section-card');
+        const isSelected = card.classList.contains('selected');
+        all.forEach(c => c.classList.remove('selected', 'dimmed'));
+        if (!isSelected) {
+            card.classList.add('selected');
+            all.forEach(c => { if (c !== card) c.classList.add('dimmed'); });
+        }
+    }
+
+    function handleAction() {
+        if (isEnrolled()) {
+            const updated = JSON.parse(localStorage.getItem(key('courses')) || '[]').filter(c => c.code !== 'COP 3503');
+            localStorage.setItem(key('courses'), JSON.stringify(updated));
+            window.location.href = 'calendar.html';
+        } else {
+            const selected = document.querySelector('.section-card.selected');
+            if (!selected) { alert('Please select a section first.'); return; }
+
+            const days      = selected.dataset.days ? selected.dataset.days.split(',').map(Number) : [];
+            const startTime = selected.dataset.startTime;
+            const endTime   = selected.dataset.endTime;
+            const crn       = selected.dataset.crn;
+            const label     = selected.dataset.label;
+
+            const blocks = [];
+            if (days.length > 0 && startTime) {
+                const startQ = timeToQ(startTime);
+                // For end time: the class ends AT that time, so last occupied quarter
+                // is the one containing (endTime - 1 minute)
+                const endQ   = timeToQEnd(endTime);
+                for (const day of days) {
+                    blocks.push({ day, startQ, endQ });
+                }
+            }
+
+            const updated = JSON.parse(localStorage.getItem(key('courses')) || '[]').filter(c => c.code !== 'COP 3503');
+            updated.push({ code: 'COP 3503', crn, label, href: 'cop3503.html', blocks });
+            localStorage.setItem(key('courses'), JSON.stringify(updated));
+            window.location.href = 'calendar.html';
+        }
+    }
+
+    function applyCalendarConflicts() {
+        if (isEnrolled()) return;
+        const greyedCols = new Set(JSON.parse(localStorage.getItem(key('greyedCols')) || '[]'));
+        const greyedRows = new Set(JSON.parse(localStorage.getItem(key('greyedRows')) || '[]')); // hour indices
+
+        document.querySelectorAll('.section-card').forEach(card => {
+            const days      = card.dataset.days ? card.dataset.days.split(',').map(Number) : [];
+            const startTime = card.dataset.startTime;
+            const endTime   = card.dataset.endTime;
+            if (days.length === 0) return;
+
+            const dayConflict = days.some(d => greyedCols.has(d));
+
+            let rowConflict = false;
+            if (startTime && endTime) {
+                const startQ = timeToQ(startTime);
+                const endQ   = timeToQ(endTime);
+                const startHour = Math.floor(startQ / 4);
+                const endHour   = Math.floor(endQ / 4);
+                for (let h = startHour; h <= endHour; h++) {
+                    if (greyedRows.has(h)) { rowConflict = true; break; }
+                }
+            }
+
+            if (dayConflict || rowConflict) {
+                card.classList.add('conflicted');
+                card.style.pointerEvents = 'none';
+            }
+        });
+    }
+
+    updateUI();
+    applyCalendarConflicts();
+
+    // Build prereq flowchart using SVG lines
+    function buildChart() {
+        const HARD_COMPLETED = new Set(['COP 2220']);
+        const completedCodes = new Set(HARD_COMPLETED);
+        for (let i = 0; i < semIdx; i++) {
+            JSON.parse(localStorage.getItem(`cal_${i}_courses`) || '[]').forEach(c => completedCodes.add(c.code));
+        }
+        const inProgress = new Set(
+            JSON.parse(localStorage.getItem(key('courses')) || '[]').map(c => c.code)
+        );
+
+        function nodeStatus(code) {
+            if (completedCodes.has(code)) return 'completed';
+            if (inProgress.has(code))     return 'inprogress';
+            return 'none';
+        }
+
+        const children = [
+            { code: 'COP 3530', label: 'COP 3530 — Data Structures' },
+            { code: 'CNT 4504', label: 'CNT 4504 — Networks' },
+            { code: 'COP 3703', label: 'COP 3703 — Databases' },
+            { code: 'COP 3404', label: 'COP 3404 — Systems Prog.' },
+        ];
+
+        // Layout: vertical column
+        // Node height = 26px, vertical gap between rows = 36px
+        const NODE_H   = 26;
+        const NODE_W   = 220;
+        const ROW_GAP  = 40;
+        const X_LEFT   = 10;  // x of node left edge
+        const X_MID    = X_LEFT + NODE_W / 2; // center x
+
+        // Row top positions (top of each node box)
+        const yPrereq  = 0;
+        const yCurrent = yPrereq  + NODE_H + ROW_GAP;
+        const yFirstChild = yCurrent + NODE_H + ROW_GAP;
+        const totalH   = yFirstChild + children.length * (NODE_H + 8) - 8 + 10;
+        const totalW   = NODE_W + X_LEFT + 10;
+
+        const container = document.getElementById('prereq-chart');
+        container.style.width  = totalW + 'px';
+        container.style.height = totalH + 'px';
+        container.innerHTML = '';
+
+        // SVG for lines — sits behind nodes
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width',  totalW);
+        svg.setAttribute('height', totalH);
+        svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
+        container.appendChild(svg);
+
+        function svgLine(x1, y1, x2, y2, color) {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            el.setAttribute('x1', x1); el.setAttribute('y1', y1);
+            el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+            el.setAttribute('stroke', color || '#ccc');
+            el.setAttribute('stroke-width', '1.5');
+            svg.appendChild(el);
+        }
+
+        function makeNode(yTop, label, status, isCurrent) {
+            const el = document.createElement('div');
+            el.style.cssText = `
+                position: absolute;
+                left: ${X_LEFT}px;
+                top: ${yTop}px;
+                width: ${NODE_W}px;
+                height: ${NODE_H}px;
+                border: 1px solid #ccc;
+                background: white;
+                font-size: 11px;
+                font-weight: bold;
+                font-family: sans-serif;
+                display: flex;
+                align-items: center;
+                padding: 0 8px;
+                white-space: nowrap;
+                overflow: hidden;
+                box-sizing: border-box;
+            `;
+            if (isCurrent) {
+                el.style.borderColor = '#888';
+                el.style.background  = '#f5f5f5';
+                el.style.fontSize    = '12px';
+            }
+            if (status === 'completed') {
+                el.style.borderColor = 'green';
+                el.style.background  = '#f0fff0';
+                el.style.color       = '#1a6e1a';
+                label = '✓ ' + label;
+            } else if (status === 'inprogress') {
+                el.style.borderColor = 'goldenrod';
+                el.style.background  = '#fffbe6';
+            } else if (!isCurrent) {
+                el.style.color  = '#666';
+                el.style.borderColor = '#ddd';
+            }
+            el.textContent = label;
+            container.appendChild(el);
+        }
+
+        // --- Draw prereq node ---
+        const prereqStatus = nodeStatus('COP 2220');
+        makeNode(yPrereq, 'COP 2220', prereqStatus, false);
+        const prereqLineColor = prereqStatus === 'completed' ? 'green' : '#ccc';
+
+        // Line from bottom of prereq to top of current
+        svgLine(X_MID, yPrereq + NODE_H, X_MID, yCurrent, prereqLineColor);
+
+        // --- Draw current node ---
+        const curStatus = nodeStatus('COP 3503');
+        makeNode(yCurrent, 'COP 3503', curStatus, true);
+
+        // Vertical line from bottom of current down to branch start
+        const yBranchTop = yCurrent + NODE_H + 10;
+        svgLine(X_MID, yCurrent + NODE_H, X_MID, yBranchTop, '#ccc');
+
+        // --- Draw children vertically ---
+        const childRowH = NODE_H + 8;
+        children.forEach((child, i) => {
+            const yTop  = yFirstChild + i * childRowH;
+            const yMid  = yTop + NODE_H / 2;
+
+            // Horizontal line from trunk to node
+            svgLine(X_MID, yBranchTop, X_MID, yMid, '#ccc'); // vertical trunk segment
+            svgLine(X_MID, yMid, X_LEFT + 1, yMid, '#ccc');  // horizontal branch to node
+
+            const cs = nodeStatus(child.code);
+            makeNode(yTop, child.label, cs, false);
+        });
+    }
+
+    buildChart();
+</script>
+</body>
+</html>

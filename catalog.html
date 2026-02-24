@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Catalog</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: white;
+        }
+
+        /* Banner */
+        .banner {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ccc;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .banner h1 {
+            font-size: 24px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .banner-buttons {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .banner-buttons button {
+            background-color: lightgrey;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: sans-serif;
+        }
+        .banner-buttons button:hover { background-color: #bbb; }
+
+        /* Search area */
+        .search-area {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+        .search-area input {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: sans-serif;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+        .search-area input:focus { border-color: #999; }
+        .search-area button {
+            padding: 10px 20px;
+            background-color: lightgrey;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: sans-serif;
+        }
+        .search-area button:hover { background-color: #bbb; }
+
+        /* Results */
+        .results-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 20px;
+        }
+
+        .results-count {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .course-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border: 1px solid #ccc;
+            margin-bottom: 8px;
+            cursor: pointer;
+            background: white;
+            width: 100%;
+            font-family: sans-serif;
+            text-align: left;
+        }
+        .course-row:hover { background: #f5f5f5; }
+
+        .course-info { display: flex; flex-direction: column; gap: 3px; }
+        .course-code { font-weight: bold; font-size: 13px; }
+        .course-name { font-size: 12px; color: #444; }
+        .course-meta { font-size: 11px; color: #888; }
+        .course-credits {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            margin-left: 20px;
+        }
+
+        .filter-banner {
+            padding: 8px 20px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ccc;
+            font-size: 12px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .filter-banner strong { color: #222; }
+        .filter-banner button {
+            background: none;
+            border: none;
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+            text-decoration: underline;
+            font-family: sans-serif;
+        }
+        .filter-banner button:hover { color: #333; }
+
+        .course-row.status-completed  { border-left: 4px solid green;    background: #f0fff0; }
+        .course-row.status-inprogress { border-left: 4px solid goldenrod; background: #fffbe6; }
+        .course-row.status-locked     { border-left: 4px solid #ccc; background: #f8f8f8; opacity: 0.65; cursor: not-allowed; pointer-events: none; }
+        .course-status-tag {
+            font-size: 10px;
+            padding: 2px 6px;
+            margin-left: 8px;
+            border-radius: 2px;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+        .tag-completed  { background: #c8f0c8; color: #1a6e1a; }
+        .tag-inprogress { background: #fff0a0; color: #7a6000; }
+        .tag-locked     { background: #e8e8e8; color: #888; }
+        .tag-demo       { background: #e0e0e0; color: #444; }
+
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <h1>Course Catalog</h1>
+    <div class="banner-buttons">
+        <button onclick="window.location.href='landing-page.html'">Landing Page</button>
+        <button onclick="window.location.href='calendar.html'">Calendar</button>
+        <button onclick="window.location.href='degree-planner.html'">Degree Planner</button>
+        <button onclick="window.location.href='catalog.html'">Course Catalog</button>
+    </div>
+</div>
+
+<div class="search-area">
+    <input type="text" id="search-input" placeholder="Search by course code, name, or category..." />
+    <button onclick="doSearch()">Search</button>
+</div>
+
+<div id="filter-banner" class="filter-banner" style="display:none;">
+    <span id="filter-label"></span>
+    <button onclick="clearFilter()">✕ Show all courses</button>
+</div>
+
+<div class="results-area" id="results-area">
+    <div class="results-count" id="results-count"></div>
+    <div id="results-list"></div>
+</div>
+
+<script>
+    const COURSES = [
+        { code: 'MAC 1147',  name: 'Pre-Calculus',                                   credits: 3,  category: 'Math',    offered: 'F, S, Su', prereqs: [],                         tags: ['math'] },
+        { code: 'MAC 2311',  name: 'Calculus I',                                      credits: 4,  category: 'Math',    offered: 'F, S, Su', prereqs: ['MAC 1147'],               tags: ['math'] },
+        { code: 'MAC 2312',  name: 'Calculus II',                                     credits: 4,  category: 'Math',    offered: 'F, S, Su', prereqs: ['MAC 2311'],               tags: ['math'] },
+        { code: 'MAS 3105',  name: 'Linear Algebra',                                  credits: 4,  category: 'Math',    offered: 'F, S',     prereqs: ['MAC 2312'],               tags: ['math', 'science'] },
+        { code: 'STA 3032',  name: 'Probability and Statistics for Engineers',        credits: 3,  category: 'Math',    offered: 'F, S, Su', prereqs: ['MAC 2312'],               tags: ['math', 'science'] },
+        { code: 'PHY 2048C', name: 'University Physics I with Lab',                   credits: 4,  category: 'Physics', offered: 'F, S',     prereqs: ['MAC 2311'],               tags: ['science'] },
+        { code: 'PHY 2049',  name: 'University Physics II with Lab',                  credits: 4,  category: 'Physics', offered: 'F, S',     prereqs: ['PHY 2048C', 'MAC 2312'], tags: ['science'] },
+        { code: 'SPC 1608',  name: 'Fundamentals of Speech',                          credits: 3,  category: 'General', offered: 'F, S, Su', prereqs: [],                         tags: ['speech'] },
+        { code: 'SPC 2600',  name: 'Public Speaking',                                 credits: 3,  category: 'General', offered: 'F, S, Su', prereqs: [],                         tags: ['speech'] },
+        { code: 'COP 2220',  name: 'Programming I',                                   credits: 3,  category: 'CS Core', offered: 'F, S, Su', prereqs: [],                         tags: ['elective', 'cs'] },
+        { code: 'COT 3100',  name: 'Computational Structures',                        credits: 3,  category: 'CS Core', offered: 'F, S, Su', prereqs: ['MAC 1147'],               tags: ['elective', 'cs'] },
+        { code: 'CIS 3253',  name: 'Legal & Ethical Issues in Computing',             credits: 3,  category: 'CS Core', offered: 'F, S, Su', prereqs: ['COP 2220'],               tags: ['elective', 'cs'] },
+        { code: 'COP 3503',  name: 'Programming II',                                  credits: 3,  category: 'CS Core', offered: 'F, S, Su', prereqs: ['COP 2220'],               tags: ['elective', 'cs'] },
+        { code: 'CDA 3100',  name: 'Computer Organization & Architecture',            credits: 4,  category: 'CS Core', offered: 'S',        prereqs: ['COP 2220'],               tags: ['elective', 'cs'] },
+        { code: 'COT 3210',  name: 'Theory of Computation',                           credits: 3,  category: 'CS',      offered: 'F',        prereqs: ['COT 3100'],               tags: ['elective', 'cs'] },
+        { code: 'COP 3530',  name: 'Data Structures',                                 credits: 3,  category: 'CS',      offered: 'F, S, Su', prereqs: ['COT 3100', 'COP 3503'],  tags: ['elective', 'cs'] },
+        { code: 'CNT 4504',  name: 'Computer Networks',                               credits: 3,  category: 'CS Core', offered: 'F, S, Su', prereqs: ['COP 3503'],               tags: ['elective', 'cs'] },
+        { code: 'COP 3703',  name: 'Introduction to Databases',                       credits: 3,  category: 'CS Core', offered: 'F, S, Su', prereqs: ['COP 3503'],               tags: ['elective', 'cs'] },
+        { code: 'COP 3404',  name: 'Systems Programming',                             credits: 3,  category: 'CS',      offered: 'F',        prereqs: ['CDA 3100', 'COP 3503'],  tags: ['elective', 'cs'] },
+        { code: 'COP 4620',  name: 'Construction of Language Translators',            credits: 3,  category: 'CS',      offered: 'S',        prereqs: ['COT 3210', 'COP 3530'],  tags: ['elective', 'cs'] },
+        { code: 'CEN 4010',  name: 'Software Engineering',                            credits: 3,  category: 'CS',      offered: 'S',        prereqs: ['COP 3530', 'COP 3703'],  tags: ['elective', 'cs'] },
+        { code: 'COT 4400',  name: 'Design & Analysis of Algorithms',                 credits: 3,  category: 'CS',      offered: 'F',        prereqs: ['COP 3530'],               tags: ['elective', 'cs'] },
+        { code: 'CAP 4630',  name: 'Introduction to Artificial Intelligence',         credits: 3,  category: 'CS',      offered: 'S',        prereqs: ['COP 3530'],               tags: ['elective', 'cs'] },
+        { code: 'COP 4610',  name: 'Operating Systems',                               credits: 3,  category: 'CS',      offered: 'S',        prereqs: ['COP 3530', 'COP 3404'],  tags: ['elective', 'cs'] },
+    ];
+
+    // Filter config: maps URL param → { label, match fn }
+    const FILTER_CONFIG = {
+        elective: {
+            label: 'Showing courses that fulfill the <strong>CS Elective</strong> requirement (any 3XXX/4XXX CAP/CDA/CEN/CIS/CNT/COP/COT)',
+            match: c => c.tags.includes('elective') && /^(CAP|CDA|CEN|CIS|CNT|COP|COT)\s[34]/.test(c.code)
+        },
+        science: {
+            label: 'Showing courses that fulfill the <strong>Science</strong> requirement',
+            match: c => c.tags.includes('science')
+        },
+        speech: {
+            label: 'Showing courses that fulfill the <strong>Speech / Public Speaking</strong> requirement',
+            match: c => c.tags.includes('speech')
+        },
+    };
+
+    // Read URL filter param
+    const urlParams  = new URLSearchParams(window.location.search);
+    const filterKey  = urlParams.get('filter');
+    const filterConf = FILTER_CONFIG[filterKey] || null;
+
+    // Show/hide filter banner
+    if (filterConf) {
+        const banner = document.getElementById('filter-banner');
+        banner.style.display = 'flex';
+        document.getElementById('filter-label').innerHTML = filterConf.label;
+    }
+
+    function clearFilter() {
+        window.location.href = 'catalog.html';
+    }
+
+    const HARD_COMPLETED = new Set(['COP 2220']);
+    const semIdx = parseInt(localStorage.getItem('cal_semIdx') || '0');
+    const completedCodes = new Set(HARD_COMPLETED);
+    for (let i = 0; i < semIdx; i++) {
+        const courses = JSON.parse(localStorage.getItem(`cal_${i}_courses`) || '[]');
+        courses.forEach(c => completedCodes.add(c.code));
+    }
+    const inProgressCodes = new Set(
+        JSON.parse(localStorage.getItem(`cal_${semIdx}_courses`) || '[]').map(c => c.code)
+    );
+
+    function getStatus(course) {
+        if (completedCodes.has(course.code))  return 'completed';
+        if (inProgressCodes.has(course.code)) return 'inprogress';
+        if (!course.prereqs.every(p => completedCodes.has(p))) return 'locked';
+        return 'available';
+    }
+
+    function doSearch() {
+        const query = document.getElementById('search-input').value.trim().toLowerCase();
+        const list  = document.getElementById('results-list');
+        const count = document.getElementById('results-count');
+
+        // Start with filter-scoped courses if a filter is active
+        let pool = filterConf ? COURSES.filter(filterConf.match) : COURSES;
+
+        // Then apply text search on top
+        const filtered = query
+            ? pool.filter(c =>
+                c.code.toLowerCase().includes(query)  ||
+                c.name.toLowerCase().includes(query)  ||
+                c.category.toLowerCase().includes(query) ||
+                c.prereqs.join(', ').toLowerCase().includes(query))
+            : pool;
+
+        count.textContent = `${filtered.length} course${filtered.length !== 1 ? 's' : ''} found`;
+        list.innerHTML = '';
+
+        if (filtered.length === 0) {
+            list.innerHTML = '<div class="no-results">No courses match your search.</div>';
+            return;
+        }
+
+        filtered.forEach(course => {
+            const status = getStatus(course);
+            const isDemo = course.code === 'COP 3503';
+            const prereqStr = course.prereqs.length ? course.prereqs.join(', ') : 'None';
+
+            const row = document.createElement('button');
+            row.className = 'course-row';
+            if (status === 'completed')  row.classList.add('status-completed');
+            if (status === 'inprogress') row.classList.add('status-inprogress');
+            if (status === 'locked') {
+                row.classList.add('status-locked');
+                row.disabled = true;
+            }
+
+            if (status !== 'locked') {
+                row.onclick = () => {
+                    if (course.code === 'COP 3503') window.location.href = 'cop3503.html';
+                    else window.location.href = 'unavailable.html';
+                };
+            }
+
+            const completedTag  = status === 'completed'  ? '<span class="course-status-tag tag-completed">✓ Completed</span>'   : '';
+            const inProgressTag = status === 'inprogress' ? '<span class="course-status-tag tag-inprogress">⏳ In Progress</span>' : '';
+            const lockedTag     = status === 'locked'     ? '<span class="course-status-tag tag-locked">🔒</span>'                 : '';
+            const demoTag       = isDemo                  ? '<span class="course-status-tag tag-demo">★ Demo</span>'              : '';
+
+            row.innerHTML = `
+                <div class="course-info">
+                    <div class="course-code">${course.code}${completedTag}${inProgressTag}${lockedTag}${demoTag}</div>
+                    <div class="course-name">${course.name}</div>
+                    <div class="course-meta">${course.category} · ${course.offered} · Prereqs: ${prereqStr}</div>
+                </div>
+                <div class="course-credits">${course.credits} cr.</div>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    document.getElementById('search-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doSearch();
+    });
+
+    doSearch();
+</script>
+
+</body>
+</html>
